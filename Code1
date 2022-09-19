@@ -1,1 +1,97 @@
+import numpy as np
 
+def getRotation(oPa, oPb, aPb):
+    """Returns the rotation matrix of coordinate frame A relative to
+    the origin O, using point B"""
+    # oPa means position of a w.r.t o
+    aPbINV = np.transpose(1/(np.matmul(np.transpose(aPb),aPb))*aPb)
+    oRa = np.multiply(aPbINV, (oPb-oPa))
+    oTb = [[oRa[0][0], oRa[0][1], oRa[0][2], oPa[0][0]], 
+        [oRa[1][0], oRa[1][1], oRa[1][2], oPa[1][0]],
+        [oRa[2][0], oRa[2][1], oRa[2][2], oPa[2][0]],
+        [0, 0, 0, 1]]
+    return oRa
+
+def getTransform(oRa, oPa):
+    """Transform to convert a vector in terms of A to terms of O"""
+    oTb = [[oRa[0][0], oRa[0][1], oRa[0][2], oPa[0][0]], 
+        [oRa[1][0], oRa[1][1], oRa[1][2], oPa[1][0]],
+        [oRa[2][0], oRa[2][1], oRa[2][2], oPa[2][0]],
+        [0, 0, 0, 1]]
+    return oTb
+
+### TOOL FRAME ###
+# Vectors
+oPt = np.transpose(np.array([[-555.6, -78.5, 19.05]]))
+oPq = np.transpose(np.array([[-645, 77.2, 19.05]]))
+tPq = np.transpose(np.array([[-127, 127, 0]]))
+gtaP = np.transpose(np.array([[144, -98.6, 515]]))
+ptaP = np.transpose(np.array([[144, 67, 515]]))
+ctaP = np.transpose(np.array([[144, 231.5, 515]]))
+portafilterEntryP = np.transpose(np.array([[9.5,67.3,214]]))
+# Matrices
+oRt = getRotation(oPt, oPq, tPq)
+grinderApproachT = getTransform(oRt, gtaP)
+portafilterApproachT = getTransform(oRt, ptaP)
+cupApproachT = getTransform(oRt, ctaP)
+portafilterEntryApproachT = getTransform(oRt, portafilterEntryP)
+
+### GRINDER FRAME ###
+# Vectors
+oPg = np.transpose(np.array([[482.7, -432.1, 316.1]]))
+oPq = np.transpose(np.array([[370.5, -322.5, 65.9]]))
+gPq = np.transpose(np.array([[157.61, 0, -250.45]]))
+PF2P = np.transpose(np.array([[157.61, 0, -250.45]]))
+gSliderP = np.transpose(np.array([[-35.82, 83.8, -153]]))
+gButOnP = np.transpose(np.array([[-64.42, 89.82, -227.68]]))
+gButOffP = np.transpose(np.array([[-80.71, 94.26, -227.68]]))
+# Matrices
+oRg = getRotation(oPg, oPq, gPq)
+PF2T = getTransform(oRg, PF2P)
+gSliderT = getTransform(oRg, gSliderP)
+gButOnT = getTransform(oRg, gButOnP)
+gButOffT = getTransform(oRg, gButOffP)
+
+### COFFEE MACHINE FRAME
+# Vectors
+oPc = np.transpose(np.array([[-368.4, 389.0, 350.6]]))
+oPq = np.transpose(np.array([[-580.4, -444.7, 350.6]]))
+cPq = np.transpose(np.array([[0, 218, 0]]))
+cBut1P = np.transpose(np.array([[50.67,35.25,-27.89]]))
+cBut2P = np.transpose(np.array([[50.67,35.25,-61.39]]))
+cBut3P = np.transpose(np.array([[50.67,35.25,-94.89]]))
+cSwtch1P = np.transpose(np.array([[50.67,98.75, -27.89]]))
+cCupSpotP= np.transpose(np.array([[-12.68,72,-290]]))
+# Matrices
+oRc = getRotation(oPc, oPq, cPq)
+cBut1T = getTransform(oRc, cBut1P)
+cBut2T = getTransform(oRc, cBut2P)
+cBut3T = getTransform(oRc, cBut3P)
+cSwtch1T = getTransform(oRc, cSwtch1P)
+cCupSpotT = getTransform(oRc, cCupSpotP)
+
+### SCRAPER FRAME ###
+# Vectors
+oPs = np.transpose(np.array([[599.9, 53.0, 254.4]]))
+oPq = np.transpose(np.array([[582.7, 128.6, 235.8]]))
+sPq = np.transpose(np.array([[-80, 0, 0]]))
+sTamperP = np.transpose(np.array([[-80, 0, -55]]))
+sScraperP = np.transpose(np.array([[70,0,-32]]))
+# Matices
+oRs = getRotation(oPs, oPq, sPq)
+sTamperT = getTransform(oRs, sTamperP)
+sScraperT = getTransform(oRs, sScraperP)
+
+
+### COFFEE CUP STAND FRAME ###
+# Vectors
+csCuplipP = np.transpose(np.array([[-40,0,180]]))
+csCntreP = np.transpose(np.array([[0,0,217]]))
+# Matices
+oRcs = [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
+csCuplipT = getTransform(oRcs, csCuplipP)
+csCntreT = getTransform(oRcs, csCntreP)
+
+
+
+# print(oRs)
