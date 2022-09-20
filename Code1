@@ -1,4 +1,16 @@
+from robodk.robolink import *
+import robolink as rl    # RoboDK API
+import robodk as rdk     # Robot toolbox
 import numpy as np
+import time
+
+RDK = rl.Robolink()
+
+robot = RDK.Item('UR5')
+world_frame = RDK.Item('UR5 Base')
+target = RDK.Item('Home')   # existing target in station
+robot.setPoseFrame(world_frame)
+robot.setPoseTool(robot.PoseTool())
 
 def getRotation(oPa, oPb, aPb):
     """Returns the rotation matrix of coordinate frame A relative to
@@ -20,78 +32,119 @@ def getTransform(oRa, oPa):
         [0, 0, 0, 1]]
     return oTb
 
+
+# Directly use the RDK Matrix object from to hold pose (its an HT)
+T_home = rdk.Mat([[     0.000000,     0.000000,     1.000000,   523.370000 ],
+     [-1.000000,     0.000000,     0.000000,  -109.000000 ],
+     [-0.000000,    -1.000000,     0.000000,   607.850000 ],
+      [0.000000,     0.000000,     0.000000,     1.000000 ]])
+
+
+### TOOLS ###
+portafilterBearingP = np.transpose(np.array([[-32.0, 0.0, 27.56]]))
+portafilterCenterP = np.transpose(np.array([[4.71, 0.0, 144.76]]))
+portafilterToolToGrinderR = np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]])
+portafilterToolBearingAddition = np.matmul(portafilterToolToGrinderR,portafilterBearingP)
+
 ### TOOL FRAME ###
 # Vectors
 oPt = np.transpose(np.array([[-555.6, -78.5, 19.05]]))
-oPq = np.transpose(np.array([[-645, 77.2, 19.05]]))
-tPq = np.transpose(np.array([[-127, 127, 0]]))
-gtaP = np.transpose(np.array([[144, -98.6, 515]]))
-ptaP = np.transpose(np.array([[144, 67, 515]]))
-ctaP = np.transpose(np.array([[144, 231.5, 515]]))
+oPq = np.transpose(np.array([[-645.0, 77.2, 19.05]]))
+tPq = np.transpose(np.array([[-127.0, 127.0, 0]]))
+gtaP = np.transpose(np.array([[144.0, -98.6, 515.0]]))
+ptaP = np.transpose(np.array([[144.0, 67.0, 515.0]]))
+ctaP = np.transpose(np.array([[144.0, 231.5, 515.0]]))
 portafilterEntryP = np.transpose(np.array([[9.5,67.3,214]]))
 # Matrices
 oRt = getRotation(oPt, oPq, tPq)
-grinderApproachT = getTransform(oRt, gtaP)
-portafilterApproachT = getTransform(oRt, ptaP)
-cupApproachT = getTransform(oRt, ctaP)
-portafilterEntryApproachT = getTransform(oRt, portafilterEntryP)
-
+T_grinderApproach = rdk.Mat(getTransform(oRt, gtaP))
+T_portafilterApproach = rdk.Mat(getTransform(oRt, ptaP))
+T_cupApproach = rdk.Mat(getTransform(oRt, ctaP))
+T_portafilterEntryApproach = rdk.Mat(getTransform(oRt, portafilterEntryP))
+# print(grinderApproachT)
 ### GRINDER FRAME ###
 # Vectors
 oPg = np.transpose(np.array([[482.7, -432.1, 316.1]]))
 oPq = np.transpose(np.array([[370.5, -322.5, 65.9]]))
-gPq = np.transpose(np.array([[157.61, 0, -250.45]]))
-PF2P = np.transpose(np.array([[157.61, 0, -250.45]]))
-gSliderP = np.transpose(np.array([[-35.82, 83.8, -153]]))
-gButOnP = np.transpose(np.array([[-64.42, 89.82, -227.68]]))
-gButOffP = np.transpose(np.array([[-80.71, 94.26, -227.68]]))
+gPq = np.transpose(np.array([[157.61, 0.0, -250.45]]))
+PF2P = np.transpose(np.array([[157.61, 0.0, -250.45]]))
+P_PF2target = PF2P + portafilterToolBearingAddition
+P_PF2approach = P_PF2target + np.array([[10.0, 0.0, 10.0]])
+P_gSlider = np.transpose(np.array([[-35.82, 83.8, -153]]))
+P_gButOn = np.transpose(np.array([[-64.42, 89.82, -227.68]]))
+P_gButOff = np.transpose(np.array([[-80.71, 94.26, -227.68]]))
 # Matrices
 oRg = getRotation(oPg, oPq, gPq)
-PF2T = getTransform(oRg, PF2P)
-gSliderT = getTransform(oRg, gSliderP)
-gButOnT = getTransform(oRg, gButOnP)
-gButOffT = getTransform(oRg, gButOffP)
-
+PF2T = rdk.Mat(getTransform(oRg, PF2P))
+T_gSlider = rdk.Mat(getTransform(oRg, P_gSlider))
+T_gButOn = rdk.Mat(getTransform(oRg, P_gButOn))
+T_gButOff = rdk.Mat(getTransform(oRg, P_gButOff))
+T_PF2target = rdk.Mat(getTransform(oRg, P_PF2target))
+T_PF2approach = rdk.Mat(getTransform(oRg, P_PF2approach))
 ### COFFEE MACHINE FRAME
 # Vectors
 oPc = np.transpose(np.array([[-368.4, 389.0, 350.6]]))
 oPq = np.transpose(np.array([[-580.4, -444.7, 350.6]]))
-cPq = np.transpose(np.array([[0, 218, 0]]))
-cBut1P = np.transpose(np.array([[50.67,35.25,-27.89]]))
-cBut2P = np.transpose(np.array([[50.67,35.25,-61.39]]))
-cBut3P = np.transpose(np.array([[50.67,35.25,-94.89]]))
-cSwtch1P = np.transpose(np.array([[50.67,98.75, -27.89]]))
-cCupSpotP= np.transpose(np.array([[-12.68,72,-290]]))
+cPq = np.transpose(np.array([[0.0, 218.0, 0.0]]))
+P_cBut1 = np.transpose(np.array([[50.67,35.25,-27.89]]))
+P_cBut2 = np.transpose(np.array([[50.67,35.25,-61.39]]))
+P_cBut3 = np.transpose(np.array([[50.67,35.25,-94.89]]))
+P_cSwtch1 = np.transpose(np.array([[50.67,98.75, -27.89]]))
+P_cCupSpot= np.transpose(np.array([[-12.68,72.0,-290]]))
 # Matrices
 oRc = getRotation(oPc, oPq, cPq)
-cBut1T = getTransform(oRc, cBut1P)
-cBut2T = getTransform(oRc, cBut2P)
-cBut3T = getTransform(oRc, cBut3P)
-cSwtch1T = getTransform(oRc, cSwtch1P)
-cCupSpotT = getTransform(oRc, cCupSpotP)
+T_cBut1 = rdk.Mat(getTransform(oRc, P_cBut1))
+T_cBut2 = rdk.Mat(getTransform(oRc, P_cBut2))
+T_cBut3 = rdk.Mat(getTransform(oRc, P_cBut3))
+T_cSwtch1 = rdk.Mat(getTransform(oRc, P_cSwtch1))
+T_cCupSpot = rdk.Mat(getTransform(oRc, P_cCupSpot))
 
 ### SCRAPER FRAME ###
 # Vectors
 oPs = np.transpose(np.array([[599.9, 53.0, 254.4]]))
 oPq = np.transpose(np.array([[582.7, 128.6, 235.8]]))
-sPq = np.transpose(np.array([[-80, 0, 0]]))
-sTamperP = np.transpose(np.array([[-80, 0, -55]]))
-sScraperP = np.transpose(np.array([[70,0,-32]]))
+sPq = np.transpose(np.array([[-80.0, 0.0, 0.0]]))
+P_sTamper = np.transpose(np.array([[-80.0, 0.0, -55.0]]))
+P_sScraper = np.transpose(np.array([[70.0,0.0,-32.0]]))
 # Matices
 oRs = getRotation(oPs, oPq, sPq)
-sTamperT = getTransform(oRs, sTamperP)
-sScraperT = getTransform(oRs, sScraperP)
+T_sTamper = rdk.Mat(getTransform(oRs, P_sTamper))
+T_sScraper = rdk.Mat(getTransform(oRs, P_sScraper))
 
 
 ### COFFEE CUP STAND FRAME ###
 # Vectors
-csCuplipP = np.transpose(np.array([[-40,0,180]]))
-csCntreP = np.transpose(np.array([[0,0,217]]))
+P_csCuplip = np.transpose(np.array([[-40.0,0.0,180.0]]))
+P_csCntre = np.transpose(np.array([[0.0,0.0,217.0]]))
 # Matices
-oRcs = [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
-csCuplipT = getTransform(oRcs, csCuplipP)
-csCntreT = getTransform(oRcs, csCntreP)
+oRcs = [[-1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]]
+T_csCuplip = rdk.Mat(getTransform(oRcs, P_csCuplip))
+T_csCntre = rdk.Mat(getTransform(oRcs, P_csCntre))
+
+# Joint angles
+J_intermediatepoint = [-151.880896, -97.616411, -59.103383, -112.890980, 90.242082, -161.879346]
+J_intermediateTF2G = [-57.200000, -90.840000, -70.650000, -113.440000, 89.700000, -177.280000]
+
+####### MOTION ############
+# TASK A
+robot.MoveJ(T_home, blocking=True)
+robot.MoveJ(T_portafilterApproach, blocking=True)
+RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
+RDK.setSimulationSpeed(2)
+robot.MoveJ(J_intermediateTF2G, blocking=True)
+robot.MoveJ(T_PF2approach, blocking=True) ### Need more here
+robot.MoveL(T_PF2target, blocking=True)
+RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
+robot.MoveJ(T_home, blocking=True)
+
+# TASK B
+# robot.MoveJ(grinderApproachT, blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
 
 
+# RDK.Pause(time_ms=300)
 
+# robot.MoveJ(T_home, blocking=True)
+
+# RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
 # print(oRs)
