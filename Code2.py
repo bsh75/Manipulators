@@ -1,3 +1,4 @@
+from pprint import pprint
 from robodk import *
 import robolink as rl    # RoboDK API
 import robodk as rdk     # Robot toolbox
@@ -47,10 +48,17 @@ def getTransform(aRb, aPb):
     return aTb
 
 # TOOLS
-gToolTheta = 50/180*np.pi
+Identity = np.array([[1, 0, 0], [0, 1, 0],[0, 0, 1]])
+gToolTheta = -50/180*np.pi
 R_grinder = np.array([[math.cos(gToolTheta), -math.sin(gToolTheta), 0.0], [math.sin(gToolTheta), math.cos(gToolTheta), 0.0], [0.0, 0.0, 1.0]])
 P_grinderPush = np.transpose(np.array([[0.0, 0.0, 102.82]]))
-T_grinderPush = np.linalg.inv(getTransform(R_grinder, P_grinderPush))
+T_grinderPush = rdk.Mat(np.linalg.inv(getTransform(R_grinder, P_grinderPush)).tolist())
+# tcpTgt = np.linalg.inv(getTransform(R_grinder, np.transpose(np.array([[0, 0, 0, 0]]))))
+# gtTpb = np.linalg.inv(getTransform(Identity, P_grinderPush))
+# tcpTpb = np.matmul(gtTpb, tcpTgt)
+# print(T_grinderPush)
+# print(tcpTpb)
+# print(T_grinderPush)
 # print("T_grinderPush = ", T_grinderPush)
 
 ### TOOL FRAME ###
@@ -79,25 +87,33 @@ cPq = np.transpose(np.array([[0.0, 218.0, 0.0]]))
 oRc, thetaC = getRotation(oPc, oPq, cPq)
 T_CMF = rdk.Mat(getTransform(oRc, oPc))
 T_CMF2 = rdk.Mat(np.matmul(T_CMF, T_grinderPush).tolist())
-print(T_CMF)
-# Button 1
+# print(T_CMF)
+# Button 1: urTtcp = urTcm cmTbut1 inv(gtTpb) inv(tcpTgt)
 P_cBut1 = np.transpose(np.array([[50.67,35.25,-27.89]]))
-# R_cBut1 = np.array([[0, 0, -1],[0, 1, 0],[1, 0, 0]])
-R_cBut1 = np.array([[1, 0, 0],[0, 1, 0],[0, 0, 1]])
+R_cBut1 = np.array([[0, 0, -1],[0, 1, 0],[1, 0, 0]])
+# R_cBut1 = np.array([[1, 0, 0],[0, 1, 0],[0, 0, 1]])
 T_cBut1 = rdk.Mat(getTransform(R_cBut1, P_cBut1))
 T_But1 = np.matmul(T_CMF, T_cBut1)
-T_ButTarget = rdk.Mat(np.matmul(T_But1, T_grinderPush).tolist())
+T_But1Target = T_CMF
 
+
+# T_But1Target = rdk.Mat(np.matmul(T_CMF, tcpTgt).tolist())
+# urTtcp = np.matmul(np.matmul(T_But1, gtTpb), tcpTgt)
+# print(T_But1Target)
+# print(urTtcp)
 P_cBut2 = np.transpose(np.array([[50.67,35.25,-61.39]]))
 P_cBut3 = np.transpose(np.array([[50.67,35.25,-94.89]]))
 P_cSwtch1 = np.transpose(np.array([[50.67,98.75, -27.89]]))
 P_cCupSpot= np.transpose(np.array([[-12.68,72.0,-290]]))
 
+# print(target)
+# T_TFR = rdk.Mat(tcpTgt.tolist())
+print(T_But1Target)
 # MOVEMENTS
 RDK.setSimulationSpeed(2)
 robot.MoveJ(target, blocking=True)
-robot.MoveJ(T_TF, blocking=True)
-RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-robot.MoveJ(T_CMF, blocking=True)
-RDK.setSimulationSpeed(0.3)
-robot.MoveJ(T_ButTarget, blocking=True)
+robot.MoveJ(T_But1Target, blocking=True)
+# robot.MoveJ(T_TF, blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+# RDK.setSimulationSpeed(0.3)
+# robot.MoveJ(target, blocking=True)
