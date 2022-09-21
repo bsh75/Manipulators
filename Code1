@@ -1,4 +1,4 @@
-from robodk.robolink import *
+from robodk import *
 import robolink as rl    # RoboDK API
 import robodk as rdk     # Robot toolbox
 import numpy as np
@@ -55,9 +55,13 @@ T_home = rdk.Mat([[     0.000000,     0.000000,     1.000000,   523.370000 ],
 
 ### GLobal Frame
 P_PF2 = np.transpose(np.array([[370.5, -322.5, 65.9]]))
-oRo = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+oRo = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
-### TOOLS ###
+### TOOL Transforms ###
+Identity = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+P_grinderPush = np.transpose(np.array([[0.0, 0.0, 102.82]]))
+T_grinderPush = rdk.Mat(getTransform(Identity, P_grinderPush))
+
 portafilterBearingP = np.transpose(np.array([[-32.0, 0.0, 27.56]]))
 portafilterCenterP = np.transpose(np.array([[4.71, 0.0, 144.76]]))
 R_portafilterToolToGrinder = np.array([[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [-1.0, 0.0, 0.0]])
@@ -77,11 +81,11 @@ portafilterEntryP = np.transpose(np.array([[9.5,67.3,214]]))
 # Matrices
 oRt = getRotation(oPt, oPq, tPq)
 T_grinderApproach = rdk.Mat(getTransform(oRt, gtaP))
-print(T_grinderApproach)
+# print(T_grinderApproach)
 T_portafilterApproach = rdk.Mat(getTransform(oRt, ptaP))
 T_cupApproach = rdk.Mat(getTransform(oRt, ctaP))
 T_portafilterEntryApproach = rdk.Mat(getTransform(oRt, portafilterEntryP))
-print(oPt + np.matmul(oRt, tPq), "==\n", oPq, '\n') #GOOD
+# print(oPt + np.matmul(oRt, tPq), "==\n", oPq, '\n') #GOOD
 
 ### GRINDER FRAME ###
 # Vectors
@@ -105,7 +109,7 @@ T_gButOff = rdk.Mat(getTransform(oRg, P_gButOff))
 # T_PF2target = rdk.Mat(getTransform(oRg, P_PF2target))
 T_PF2approach = rdk.Mat(getTransform(oRg, P_PF2approach))
 T_PF2target = rdk.Mat(getTransform(oRo, P_PF2))
-print(oPg + np.matmul(oRg, gPq), "==\n", oPqg, '\n') #BAD
+# print(oPg + np.matmul(oRg, gPq), "==\n", oPqg, '\n') #BAD
 
 # ### COFFEE MACHINE FRAME
 # Vectors
@@ -113,8 +117,13 @@ oPc = np.transpose(np.array([[-365.5, -386.7, 349.8]]))
 oPq = np.transpose(np.array([[-577.8, -441.6, 349.8]]))
 cPq = np.transpose(np.array([[0.0, 218.0, 0.0]]))
 oRc = getRotation(oPc, oPq, cPq)
-T_CMF = getTransform(oRc, oPc)
-print(T_CMF)
+T_CMF = rdk.Mat(getTransform(oRc, oPc))
+print(T_PF2target, T_CMF)
+T_CMF = np.matmul(T_CMF, np.linalg.inv(T_grinderPush))
+
+T_CMF = T_CMF.astype(float)
+T_CMF = rdk.Mat(T_CMF)
+# print(T_CMF)
 P_cBut1 = np.transpose(np.array([[50.67,35.25,-27.89]]))
 P_cBut2 = np.transpose(np.array([[50.67,35.25,-61.39]]))
 P_cBut3 = np.transpose(np.array([[50.67,35.25,-94.89]]))
@@ -160,20 +169,20 @@ J_intermediatepoint = [-151.880896, -97.616411, -59.103383, -112.890980, 90.2420
 J_intermediateTF2G = [-57.200000, -90.840000, -70.650000, -113.440000, 89.700000, -177.280000]
 
 ####### MOTION ############
-# # Push coffee machine buttons
-# RDK.setSimulationSpeed(2)
-# robot.MoveJ(T_home, blocking=True)
-# robot.MoveJ(T_grinderApproach, blocking=True)
-# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-# robot.MoveJ(T_cBut1App, blocking=True)
-# RDK.setSimulationSpeed(0.1)
-# robot.MoveL(T_cBut1, blocking=True)
-# robot.MoveL(T_cBut1App, blocking=True)
-# RDK.setSimulationSpeed(2)
-# robot.MoveJ(T_grinderApproach, blocking=True)
-# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-# robot.MoveJ(T_home, blocking=True)
-# rdk.pause(1)
+# Push coffee machine buttons
+RDK.setSimulationSpeed(2)
+robot.MoveJ(T_home, blocking=True)
+robot.MoveJ(T_grinderApproach, blocking=True)
+RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+RDK.setSimulationSpeed(0.1)
+robot.MoveJ(T_CMF, blocking=True)
+robot.MoveL(T_cBut1, blocking=True)
+robot.MoveL(T_cBut1App, blocking=True)
+RDK.setSimulationSpeed(2)
+robot.MoveJ(T_grinderApproach, blocking=True)
+RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+robot.MoveJ(T_home, blocking=True)
+rdk.pause(1)
 
 # # TASK A
 # robot.MoveJ(T_home, blocking=True)
