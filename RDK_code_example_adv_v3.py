@@ -36,7 +36,6 @@ T_grinderapproach_np = np.array([[     0.173648,    -0.984800,    -0.004000,  -5
 # Need to convert numpy array into and RDK matrix
 T_grinderapproach = rdk.Mat(T_grinderapproach_np.tolist())
 
-
 robot.MoveJ(T_home, blocking=True)
 robot.MoveJ(J_intermediatepoint, blocking=True)
 robot.MoveL(T_grinderapproach, blocking=True)

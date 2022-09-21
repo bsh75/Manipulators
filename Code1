@@ -60,7 +60,7 @@ oRo = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 ### TOOL Transforms ###
 Identity = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 P_grinderPush = np.transpose(np.array([[0.0, 0.0, 102.82]]))
-T_grinderPush = rdk.Mat(getTransform(Identity, P_grinderPush))
+T_grinderPush = getTransform(Identity, P_grinderPush)
 
 portafilterBearingP = np.transpose(np.array([[-32.0, 0.0, 27.56]]))
 portafilterCenterP = np.transpose(np.array([[4.71, 0.0, 144.76]]))
@@ -117,12 +117,9 @@ oPc = np.transpose(np.array([[-365.5, -386.7, 349.8]]))
 oPq = np.transpose(np.array([[-577.8, -441.6, 349.8]]))
 cPq = np.transpose(np.array([[0.0, 218.0, 0.0]]))
 oRc = getRotation(oPc, oPq, cPq)
-T_CMF = rdk.Mat(getTransform(oRc, oPc))
-print(T_PF2target, T_CMF)
-T_CMF = np.matmul(T_CMF, np.linalg.inv(T_grinderPush))
-
-T_CMF = T_CMF.astype(float)
-T_CMF = rdk.Mat(T_CMF)
+T_CMF = getTransform(oRc, oPc)
+T_CMF = rdk.Mat(np.matmul(T_CMF, np.linalg.inv(T_grinderPush)).tolist())
+# T_CMF = rdk.Mat(T_CMF)
 # print(T_CMF)
 P_cBut1 = np.transpose(np.array([[50.67,35.25,-27.89]]))
 P_cBut2 = np.transpose(np.array([[50.67,35.25,-61.39]]))
@@ -169,9 +166,13 @@ J_intermediatepoint = [-151.880896, -97.616411, -59.103383, -112.890980, 90.2420
 J_intermediateTF2G = [-57.200000, -90.840000, -70.650000, -113.440000, 89.700000, -177.280000]
 
 ####### MOTION ############
+# print(type(T_CMF))
+# print(type(T_grinderApproach))
+# print(T_CMF)
+# print(T_grinderApproach)
 # Push coffee machine buttons
 RDK.setSimulationSpeed(2)
-robot.MoveJ(T_home, blocking=True)
+robot.MoveJ(target, blocking=True)
 robot.MoveJ(T_grinderApproach, blocking=True)
 RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
 RDK.setSimulationSpeed(0.1)
@@ -181,7 +182,7 @@ robot.MoveL(T_cBut1App, blocking=True)
 RDK.setSimulationSpeed(2)
 robot.MoveJ(T_grinderApproach, blocking=True)
 RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-robot.MoveJ(T_home, blocking=True)
+robot.MoveJ(target, blocking=True)
 rdk.pause(1)
 
 # # TASK A
