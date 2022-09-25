@@ -1,9 +1,13 @@
-from pprint import pprint
 from robodk import *
 import robolink as rl    # RoboDK API
 import robodk as rdk     # Robot toolbox
 import numpy as np
 import math
+
+
+"""FIND: Function to search through all the possible joint angles that return a certian pose
+Use it to ensure right-handedness to set all intermediate joint points"""
+
 
 RDK = rl.Robolink()
 
@@ -95,7 +99,6 @@ R_cBut1 = np.array([[0, 0, -1],[0, 1, 0],[1, 0, 0]])
 T_cBut1 = rdk.Mat(getTransform(R_cBut1, P_cBut1))
 T_But1 = np.matmul(T_CMF, T_cBut1)
 T_But1Target = T_CMF
-
 
 # T_But1Target = rdk.Mat(np.matmul(T_CMF, tcpTgt).tolist())
 # urTtcp = np.matmul(np.matmul(T_But1, gtTpb), tcpTgt)
