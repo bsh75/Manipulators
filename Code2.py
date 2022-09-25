@@ -1,3 +1,4 @@
+from operator import matmul
 from robodk import *
 import robolink as rl    # RoboDK API
 import robodk as rdk     # Robot toolbox
@@ -23,16 +24,17 @@ def getRotation(oPa, oPb, aPb):
     # oPa means position of a w.r.t o
     # aPbINV = np.transpose(1/(np.matmul(np.transpose(aPb),aPb))*aPb)
     # oRa = np.matmul(aPbINV, (oPb-oPa))
-    aPbNorm = aPb/np.linalg.norm(aPb)
+    aPbNorm = aPb[0:2]/np.linalg.norm(aPb[0:2])
+    # print(aPbNorm)
     alpha = math.acos(aPbNorm[1])
     if aPbNorm[0] < 0:
         alpha = -alpha
     v = oPb - oPa
-    vNorm = v/np.linalg.norm(v)
+    vNorm = v[0:2]/np.linalg.norm(v[0:2])
+    # print(vNorm, '\n', vNorm[1])
     beta = math.acos(vNorm[1])
     if vNorm[0] < 0:
         beta = -beta
-    # print(aPbNorm,vNorm)
     theta = alpha - beta
     sinTheta = math.sin(theta)
     cosTheta = math.cos(theta)
@@ -51,17 +53,50 @@ def getTransform(aRb, aPb):
         [0, 0, 0, 1]]
     return aTb
 
+def rotationY(angle):
+    """Returns a rotation matrix about Y axis"""
+    angle = angle*np.pi/180
+    return np.array([[math.cos(angle), 0, math.sin(angle)], [0, 1, 0], [-math.sin(angle), 0, math.cos(angle)]])
+
+def rotationZ(angle):
+    """Returns a rotation matrix about Z axis"""
+    angle = angle*np.pi/180
+    return np.array([[math.cos(angle), -math.sin(angle), 0.0], [math.sin(angle), math.cos(angle), 0.0], [0.0, 0.0, 1.0]])
+
+def rotationX(angle):
+    """Returns a rotation matrix about X axis"""
+    angle = angle*np.pi/180
+    return np.array([[1, 0.0, 0.0], [0.0, math.cos(angle), -math.sin(angle)], [0, math.sin(angle), math.cos(angle)]])
+
+def getPforSlider(angle, radius):
+    """return a p vector for a given rotation about Y 
+    and a given length away from center of rotation"""
+    angle = angle * np.pi/180
+    x = 2*radius*sin(angle/2)
+    alpha = np.pi/2 - (np.pi/2 - angle/2)
+    P = np.transpose(np.array([[-x*math.sin(alpha), 0, -x*math.cos(alpha)]]))
+    return P
+
 # TOOLS
 Identity = np.array([[1, 0, 0], [0, 1, 0],[0, 0, 1]])
 R_FlipZ = np.array([[1, 0, 0], [0, -1, 0],[0, 0, -1]])
 Identity = np.array([[1, 0, 0], [0, 1, 0],[0, 0, 1]])
-
-gToolTheta = -50/180*np.pi
-R_grinder = np.array([[math.cos(gToolTheta), -math.sin(gToolTheta), 0.0], [math.sin(gToolTheta), math.cos(gToolTheta), 0.0], [0.0, 0.0, 1.0]])
+portTheta = -7.5
+R_porta = rotationY(portTheta)
+gToolTheta = -50
+R_Tool = rotationZ(gToolTheta)
 P_grinderPush = np.transpose(np.array([[0.0, 0.0, 102.82]]))
 P_grinderPushPlus = np.transpose(np.array([[0.0, 0.0, 120.82]]))
-T_grinderPush = np.linalg.inv(getTransform(R_grinder, P_grinderPush))
-T_grinderPushPlus = np.linalg.inv(getTransform(R_grinder, P_grinderPushPlus))
+TInv_grinderPush = np.linalg.inv(getTransform(R_Tool, P_grinderPush))
+TInv_grinderPushPlus = np.linalg.inv(getTransform(R_Tool, P_grinderPushPlus))
+P_grinderPull = np.transpose(np.array([[-50.0, 0, 67.06]]))
+TInv_grinderPull = np.linalg.inv(getTransform(R_Tool, P_grinderPull))
+P_PF2Tool = np.transpose(np.array([[-32.0, 0, 27.56]]))
+TInv_PF2Tool = np.linalg.inv(getTransform(R_Tool, P_PF2Tool))
+P_PF1Tool = np.transpose(np.array([[4.71, 0, 144.76]]))
+P_Nothing = np.transpose(np.array([[0, 0, 0]]))
+TInv_PF1Tool = np.linalg.inv(np.matmul(getTransform(R_Tool, P_PF1Tool), getTransform(R_porta, P_Nothing)))
+
 # tcpTgt = np.linalg.inv(getTransform(R_grinder, np.transpose(np.array([[0, 0, 0, 0]]))))
 # gtTpb = np.linalg.inv(getTransform(Identity, P_grinderPush))
 # tcpTpb = np.matmul(gtTpb, tcpTgt)
@@ -69,6 +104,40 @@ T_grinderPushPlus = np.linalg.inv(getTransform(R_grinder, P_grinderPushPlus))
 # print(tcpTpb)
 # print(T_grinderPush)
 # print("T_grinderPush = ", T_grinderPush)
+
+### GRINDER FRAME ###
+oPg = np.transpose(np.array([[482.7, -432.1, 316.1]]))
+oPqg = np.transpose(np.array([[370.5, -322.5, 65.9]]))
+gPq = np.transpose(np.array([[157.61, 0.0, -250.45]]))
+oRg, thetaG = getRotation(oPg, oPqg, gPq)
+T_G = getTransform(oRg, oPg)
+# PF2
+PF2Theta = -90 - portTheta
+R_PF2 = rotationY(PF2Theta)
+T_PF2 = getTransform(R_PF2, gPq)
+T_GportPlace = np.matmul(np.matmul(T_G, T_PF2), TInv_PF2Tool).tolist()
+# Slider
+P_Slider = np.transpose(np.array([[-40.82, 90.8, -123.00]]))
+sliderTheta = 100
+R_Slider = rotationZ(sliderTheta)
+T_Slider1 = getTransform(R_Slider, P_Slider)
+R_Slider2 = rotationX(-90)
+T_Slider2 = getTransform(R_Slider2, np.transpose(np.array([[0, 0, 0]])))
+T_Slider = np.matmul(T_Slider1, T_Slider2)
+T_SliderS = np.matmul(T_G, T_Slider)
+T_SliderStart = np.matmul(T_SliderS, TInv_grinderPull).tolist()
+beta = 50
+P_SliderEnd = getPforSlider(beta, 100)
+R_SliderEnd = rotationY(beta)
+T_SliderEnd = np.matmul(np.matmul(T_SliderS, getTransform(R_SliderEnd, P_SliderEnd)), TInv_grinderPull).tolist()
+# Button
+P_gButOn = np.transpose(np.array([[-64.42, 89.82, -227.68]]))
+P_gButOff = np.transpose(np.array([[-80.71, 94.26, -227.68]]))
+R_gBut = rotationX(90)
+T_ButOn = getTransform(R_gBut, P_gButOn)
+T_ButOff = getTransform(R_gBut, P_gButOff)
+T_ButOnApproach = np.matmul(T_ButOn, TInv_grinderPushPlus).tolist()
+T_ButOffApproach = np.matmul(T_ButOff, TInv_grinderPushPlus).tolist()
 
 ### TOOL FRAME ###
 # Vectors
@@ -84,7 +153,9 @@ portafilterEntryP = np.transpose(np.array([[9.5,67.3,214]]))
 oRt, thetaT = getRotation(oPt, oPq, tPq)
 T_TF = getTransform(oRt, oPt)
 T_gTool = getTransform(R_FlipZ, gtaP)
-T_gToolTarg = rdk.Mat(np.matmul(T_TF, T_gTool).tolist())
+T_gToolTarg = np.matmul(T_TF, T_gTool).tolist()
+T_pfTool = getTransform(R_FlipZ, ptaP)
+T_pfToolTarg = np.matmul(T_TF, T_pfTool).tolist()
 # print(T_grinderApproach)
 # T_portafilterApproach = rdk.Mat(getTransform(oRt, ptaP))
 # T_cupApproach = rdk.Mat(getTransform(oRt, ctaP))
@@ -97,21 +168,15 @@ oPq = np.transpose(np.array([[-577.8, -441.6, 349.8]]))
 cPq = np.transpose(np.array([[0.0, 218.0, 0.0]]))
 oRc, thetaC = getRotation(oPc, oPq, cPq)
 T_CMF = getTransform(oRc, oPc)
-T_CMF2 = rdk.Mat(np.matmul(T_CMF, T_grinderPush).tolist())
+T_CMF2 = np.matmul(T_CMF, TInv_grinderPush).tolist()
 # print(T_CMF)
 # Button 1: urTtcp = urTcm cmTbut1 inv(gtTpb) inv(tcpTgt)
 P_cBut1 = np.transpose(np.array([[45.67,35.25,-45.89]]))
-R_cBut1 = np.array([[0, 0, -1],[0, 1, 0],[1, 0, 0]])
-# R_cBut1 = np.array([[1, 0, 0],[0, 1, 0],[0, 0, 1]])
+R_cBut1 = rotationY(-90)
 T_cBut1 = getTransform(R_cBut1, P_cBut1)
 T_But1 = np.matmul(T_CMF, T_cBut1)
-T_But1Approach = rdk.Mat(np.matmul(T_But1, T_grinderPushPlus).tolist())
-T_But1Target = rdk.Mat(np.matmul(T_But1, T_grinderPush).tolist())
-
-# T_But1Target = rdk.Mat(np.matmul(T_CMF, tcpTgt).tolist())
-# urTtcp = np.matmul(np.matmul(T_But1, gtTpb), tcpTgt)
-# print(T_But1Target)
-# print(urTtcp)
+T_But1Approach = np.matmul(T_But1, TInv_grinderPushPlus).tolist()
+T_But1Target = np.matmul(T_But1, TInv_grinderPush).tolist()
 P_cBut2 = np.transpose(np.array([[50.67,35.25,-61.39]]))
 P_cBut3 = np.transpose(np.array([[50.67,35.25,-94.89]]))
 P_cSwtch1 = np.transpose(np.array([[50.67,98.75, -27.89]]))
@@ -120,18 +185,55 @@ P_cCupSpot= np.transpose(np.array([[-12.68,72.0,-290]]))
 # JOINT ANGLES
 J_toBut1 = [-0.160000, -74.080000, 113.360000, -219.270000, 14.660000, -40.000000]
 J_toBut2 = [4.310000, -94.240000, 118.630000, -162.500000, 54.830000, -107.990000]
-# MOVEMENTS
-RDK.setSimulationSpeed(0.4)
-# robot.MoveJ(target, blocking=True)
-robot.MoveJ(T_gToolTarg, blocking=True)
+J_toSlider = [-253.010000, -61.750000, 98.040000, -218.280000, -191.310000, -309.990000]
+J_toSlider1 = [-247.050000, -69.060000, 60.230000, -173.710000, -112.840000, -276.740000]
+J_toSlider2 = [-253.010000, -61.750000, 98.040000, -218.280000, -49.310000, -309.990000]
+
+
+### MOVEMENTS
+# Push Grinder Button
+RDK.setSimulationSpeed(1)
+robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
+RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
 RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-RDK.setSimulationSpeed(0.2)
-robot.MoveJ(J_toBut2, blocking=True)
-robot.MoveJ(T_But1Approach, blocking=True)
-robot.MoveL(T_But1Target, blocking=True)
-robot.MoveL(T_But1Approach, blocking=True)
-robot.MoveJ(J_toBut2, blocking=True)
-RDK.setSimulationSpeed(0.4)
-robot.MoveJ(T_gToolTarg, blocking=True)
-RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
+robot.MoveJ(rdk.Mat(T_ButOnApproach), blocking=True)
+RDK.setSimulationSpeed(0.1)
+# robot.MoveL(rdk.Mat(T_ButOn), blocking=True)
+robot.MoveL(rdk.Mat(T_ButOnApproach), blocking=True)
+robot.MoveJ(rdk.Mat(T_ButOffApproach), blocking=True)
+robot.MoveL(rdk.Mat(T_ButOff), blocking=True)
+robot.MoveL(rdk.Mat(T_ButOffApproach), blocking=True)
+RDK.setSimulationSpeed(1)
 robot.MoveJ(target, blocking=True)
+
+# Place portafilter tool under grinder
+# robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
+# RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
+# robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+# robot.MoveJ(target, blocking=True)
+
+# Pull slider 
+# RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
+# robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+# robot.MoveJ(rdk.Mat(J_toSlider1), blocking=True)
+# robot.MoveJ(rdk.Mat(J_toSlider2), blocking=True)
+# robot.MoveJ(rdk.Mat(T_SliderStart), blocking=True)
+# RDK.setSimulationSpeed(0.2)
+# robot.MoveC(rdk.Mat(T_SliderStart), rdk.Mat(T_SliderEnd), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
+# RDK.setSimulationSpeed(1)
+
+# Push button on coffee machine
+# RDK.setSimulationSpeed(1)
+# robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+# robot.MoveJ(J_toBut2, blocking=True)
+# robot.MoveJ(rdk.Mat(T_But1Approach), blocking=True)
+# RDK.setSimulationSpeed(0.2)
+# robot.MoveL(rdk.Mat(T_But1Target), blocking=True)
+# robot.MoveL(rdk.Mat(T_But1Approach), blocking=True)
+# RDK.setSimulationSpeed(1)
+# robot.MoveJ(J_toBut2, blocking=True)
+# robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
+# RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
+# robot.MoveJ(target, blocking=True)
