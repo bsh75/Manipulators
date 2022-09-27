@@ -110,14 +110,17 @@ oPg = np.transpose(np.array([[482.7, -432.1, 316.1]]))
 oPqg = np.transpose(np.array([[370.5, -322.5, 65.9]]))
 gPq = np.transpose(np.array([[157.61, 0.0, -250.45]]))
 oRg, thetaG = getRotation(oPg, oPqg, gPq)
+# oRg = rotationZ(135)
+print(thetaG)
 T_G = getTransform(oRg, oPg)
 # PF2
-PF2Theta = -90 - portTheta
+P_PF2 = np.transpose(np.array([[157.61, -26.0, -238.45]]))
+PF2Theta = -90 - portTheta -4
 R_PF2 = rotationY(PF2Theta)
-T_PF2 = getTransform(R_PF2, gPq)
+T_PF2 = getTransform(R_PF2, P_PF2)
 T_GportPlace = np.matmul(np.matmul(T_G, T_PF2), TInv_PF2Tool).tolist()
 # Slider
-P_Slider = np.transpose(np.array([[-40.82, 90.8, -123.00]]))
+P_Slider = np.transpose(np.array([[-40.82, 90.8, -103.00]]))
 sliderTheta = 100
 R_Slider = rotationZ(sliderTheta)
 T_Slider1 = getTransform(R_Slider, P_Slider)
@@ -126,18 +129,22 @@ T_Slider2 = getTransform(R_Slider2, np.transpose(np.array([[0, 0, 0]])))
 T_Slider = np.matmul(T_Slider1, T_Slider2)
 T_SliderS = np.matmul(T_G, T_Slider)
 T_SliderStart = np.matmul(T_SliderS, TInv_grinderPull).tolist()
-beta = 50
-P_SliderEnd = getPforSlider(beta, 100)
+beta = 30
+radius = 150
+P_SliderEnd = getPforSlider(beta, radius)
 R_SliderEnd = rotationY(beta)
 T_SliderEnd = np.matmul(np.matmul(T_SliderS, getTransform(R_SliderEnd, P_SliderEnd)), TInv_grinderPull).tolist()
 # Button
 P_gButOn = np.transpose(np.array([[-64.42, 89.82, -227.68]]))
 P_gButOff = np.transpose(np.array([[-80.71, 94.26, -227.68]]))
 R_gBut = rotationX(90)
-T_ButOn = getTransform(R_gBut, P_gButOn)
-T_ButOff = getTransform(R_gBut, P_gButOff)
+T_ButOn = np.matmul(T_G, getTransform(R_gBut, P_gButOn)).tolist()
+T_ButOff = np.matmul(T_G, getTransform(R_gBut, P_gButOff)).tolist()
+
 T_ButOnApproach = np.matmul(T_ButOn, TInv_grinderPushPlus).tolist()
 T_ButOffApproach = np.matmul(T_ButOff, TInv_grinderPushPlus).tolist()
+T_ButOnTarg = np.matmul(T_ButOn, TInv_grinderPush).tolist()
+T_ButOffTarg = np.matmul(T_ButOff, TInv_grinderPush).tolist()
 
 ### TOOL FRAME ###
 # Vectors
@@ -187,40 +194,57 @@ J_toBut1 = [-0.160000, -74.080000, 113.360000, -219.270000, 14.660000, -40.00000
 J_toBut2 = [4.310000, -94.240000, 118.630000, -162.500000, 54.830000, -107.990000]
 J_toSlider = [-253.010000, -61.750000, 98.040000, -218.280000, -191.310000, -309.990000]
 J_toSlider1 = [-247.050000, -69.060000, 60.230000, -173.710000, -112.840000, -276.740000]
-J_toSlider2 = [-253.010000, -61.750000, 98.040000, -218.280000, -49.310000, -309.990000]
+J_toSlider2 = [-257.160000, -78.850000, 44.820000, -53.390000, 92.010000, -147.450000] # [-253.010000, -61.750000, 98.040000, -218.280000, -49.310000, -309.990000]
+J_toSlider3 = [-253.670000, -74.430000, 104.810000, -34.940000, 92.660000, -141.270000]
+J_toPortaDrop1 = [-238.380000, -105.180000, 156.020000, -71.390000, 75.960000, -219.120000]
+J_toPortaDrop2 = [-238.380000, -95.180000, 146.020000, -52.390000, 75.960000, -219.120000]
+J_Gbut = [-63.030000, -135.630000, -77.200000, -102.170000, 182.700000, -209.000000]
 
 
 ### MOVEMENTS
+
+# # Place portafilter tool under grinder
+# RDK.setSimulationSpeed(1)
+# # RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
+# robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
+# RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
+# robot.MoveJ(J_toPortaDrop1, blocking=True)
+# RDK.setSimulationSpeed(0.2)
+# robot.MoveJ(J_toPortaDrop2, blocking=True)
+# robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+# RDK.setSimulationSpeed(1)
+# # RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
+# robot.MoveJ(target, blocking=True)
+
 # Push Grinder Button
 RDK.setSimulationSpeed(1)
 robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
 RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
 RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-robot.MoveJ(rdk.Mat(T_ButOnApproach), blocking=True)
+robot.MoveJ(rdk.Mat(J_Gbut), blocking=True)
 RDK.setSimulationSpeed(0.1)
-# robot.MoveL(rdk.Mat(T_ButOn), blocking=True)
-robot.MoveL(rdk.Mat(T_ButOnApproach), blocking=True)
-robot.MoveJ(rdk.Mat(T_ButOffApproach), blocking=True)
-robot.MoveL(rdk.Mat(T_ButOff), blocking=True)
-robot.MoveL(rdk.Mat(T_ButOffApproach), blocking=True)
-RDK.setSimulationSpeed(1)
-robot.MoveJ(target, blocking=True)
-
-# Place portafilter tool under grinder
-# robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
-# RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
-# robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+robot.MoveJ(rdk.Mat(T_ButOnApproach), blocking=True)
+robot.MoveL(rdk.Mat(T_ButOnTarg), blocking=True)
+# robot.MoveL(rdk.Mat(T_ButOnApproach), blocking=True)
+# robot.MoveJ(rdk.Mat(T_ButOffApproach), blocking=True)
+# robot.MoveL(rdk.Mat(T_ButOffTarg), blocking=True)
+# robot.MoveL(rdk.Mat(T_ButOffApproach), blocking=True)
+# RDK.setSimulationSpeed(1)
 # robot.MoveJ(target, blocking=True)
 
-# Pull slider 
+# #Pull slider 
+# RDK.setSimulationSpeed(1)
 # RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
 # robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
 # RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-# robot.MoveJ(rdk.Mat(J_toSlider1), blocking=True)
+# # robot.MoveJ(rdk.Mat(J_toSlider1), blocking=True)
 # robot.MoveJ(rdk.Mat(J_toSlider2), blocking=True)
-# robot.MoveJ(rdk.Mat(T_SliderStart), blocking=True)
+# robot.MoveJ(rdk.Mat(J_toSlider3), blocking=True)
 # RDK.setSimulationSpeed(0.2)
-# robot.MoveC(rdk.Mat(T_SliderStart), rdk.Mat(T_SliderEnd), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
+# robot.MoveJ(rdk.Mat(T_SliderStart), blocking=True)
+# # RDK.setSimulationSpeed(0.2)
+# robot.MoveJ(rdk.Mat(T_SliderEnd))
+# # # robot.MoveC(rdk.Mat(T_SliderEnd), rdk.Mat(T_SliderEnd), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
 # RDK.setSimulationSpeed(1)
 
 # Push button on coffee machine
