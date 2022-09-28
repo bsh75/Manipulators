@@ -150,8 +150,8 @@ T_G = getTransform(oRg, oPg)
 # PF2
 P_PF2 = np.transpose(np.array([[157.61, -20.0, -240]]))
 P_PF2App = np.transpose(np.array([[200, -20.0, -230]]))
-PF2Theta = -90 - portTheta +4
-PF2ThetaApp = -90 - portTheta +4
+PF2Theta = -90 - portTheta-4
+PF2ThetaApp = -90 - portTheta-4 
 R_PF2 = rotationY(PF2Theta)
 T_PF2 = getTransform(R_PF2, P_PF2)
 T_GportPlace = np.matmul(np.matmul(T_G, T_PF2), TInv_PF2Tool).tolist()
@@ -261,16 +261,17 @@ J_ToolFrame = [-149.664712, -68.684232, -83.849623, -116.347560, 91.413927, -0.0
 
 # # Place portafilter tool under grinder
 # RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
-#robot.MoveJ(J_ToolFrame, blocking=True)
-#RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
-#robot.MoveJ(J_toPortaDrop1, blocking=True)
-robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
-robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
-RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
-robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
-robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
+# robot.MoveJ(J_ToolFrame, blocking=True)
+# RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
 robot.MoveJ(J_toPortaDrop1, blocking=True)
-robot.MoveJ(target, blocking=True)
+RDK.setSimulationSpeed(0.1)
+robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
+robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+# RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
+# robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+# robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
+# robot.MoveJ(J_toPortaDrop1, blocking=True)
+# robot.MoveJ(target, blocking=True)
 
 # # # Push Grinder Button
 #robot.MoveJ(rdk.Mat(J_ToolFrame), blocking=True)
@@ -314,4 +315,5 @@ robot.MoveJ(target, blocking=True)
 # # Get Cup
 # robot.MoveJ(rdk.Mat(T_cToolTarg), blocking=True)
 # RDK.RunProgram("Cup Tool Attach (Stand)", True)
-# robot.MoveJ(rdk.Mat(T_CupCentre, blocking=True))
+# # robot.MoveJ(rdk.Mat(T_CupCentre, blocking=True))
+# RDK.RunProgram("Cup Tool Detach (Stand)", True)
