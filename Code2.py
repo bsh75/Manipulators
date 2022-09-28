@@ -148,13 +148,18 @@ oRg, thetaG = getRotation(oPg, oPqg, gPq)
 # oRg = rotationZ(135)
 T_G = getTransform(oRg, oPg)
 # PF2
-P_PF2 = np.transpose(np.array([[157.61, -26.0, -238.45]]))
-PF2Theta = -90 - portTheta -4
+P_PF2 = np.transpose(np.array([[157.61, -20.0, -240]]))
+P_PF2App = np.transpose(np.array([[200, -20.0, -230]]))
+PF2Theta = -90 - portTheta +4
+PF2ThetaApp = -90 - portTheta +4
 R_PF2 = rotationY(PF2Theta)
 T_PF2 = getTransform(R_PF2, P_PF2)
 T_GportPlace = np.matmul(np.matmul(T_G, T_PF2), TInv_PF2Tool).tolist()
+R_PF2App = rotationY(PF2Theta)
+T_PF2App = getTransform(R_PF2App, P_PF2App)
+T_GportPlaceApp = np.matmul(np.matmul(T_G, T_PF2App), TInv_PF2Tool).tolist()
 # Slider
-P_Slider = np.transpose(np.array([[-40.82, 90.8, -103.00]]))
+P_Slider = np.transpose(np.array([[-45.82, 110, -103.00]]))
 sliderTheta = 100
 R_Slider = rotationZ(sliderTheta)
 T_Slider1 = getTransform(R_Slider, P_Slider)
@@ -163,8 +168,8 @@ T_Slider2 = getTransform(R_Slider2, np.transpose(np.array([[0, 0, 0]])))
 T_Slider = np.matmul(T_Slider1, T_Slider2)
 T_SliderS = np.matmul(T_G, T_Slider)
 T_SliderStart = np.matmul(T_SliderS, TInv_grinderPull).tolist()
-beta = 30
-radius = 150
+beta = 61
+radius = 120
 P_SliderEnd = getPforSlider(beta, radius)
 R_SliderEnd = rotationY(beta)
 T_SliderEnd = np.matmul(np.matmul(T_SliderS, getTransform(R_SliderEnd, P_SliderEnd)), TInv_grinderPull).tolist()
@@ -248,55 +253,61 @@ J_Gbut2 = [-63.030000, -135.630000, -77.200000, -102.170000, 182.700000, -209.00
 J_CtoBut1 = [4.300000, -97.240000, 115.630000, -209.500000, 54.830000, -107.990000]
 J_CtoBut2 = [4.310000, -94.240000, 118.630000, -162.500000, 54.830000, -107.990000]
 
+# Tool Frame
+J_ToolFrame = [-149.664712, -68.684232, -83.849623, -116.347560, 91.413927, -0.018507]
+
 
 ### MOVEMENTS
 
 # # Place portafilter tool under grinder
-# # RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
-# robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
-# RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
-# robot.MoveJ(J_toPortaDrop1, blocking=True)
-# robot.MoveJ(J_toPortaDrop2, blocking=True)
-# robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
-# RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
-# robot.MoveJ(J_toPortaDrop2, blocking=True)
-# robot.MoveJ(target, blocking=True)
+# RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
+#robot.MoveJ(J_ToolFrame, blocking=True)
+#RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
+#robot.MoveJ(J_toPortaDrop1, blocking=True)
+robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
+robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
+robot.MoveJ(rdk.Mat(T_GportPlace), blocking=True)
+robot.MoveJ(rdk.Mat(T_GportPlaceApp), blocking=True)
+robot.MoveJ(J_toPortaDrop1, blocking=True)
+robot.MoveJ(target, blocking=True)
 
 # # # Push Grinder Button
-# # robot.MoveJ(rdk.Mat(T_pfToolTarg), blocking=True)
+#robot.MoveJ(rdk.Mat(J_ToolFrame), blocking=True)
 # # # RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
-# # RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-# robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
-# robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
-# robot.MoveJ(rdk.Mat(T_ButOnApproach), blocking=True)
-# robot.MoveL(rdk.Mat(T_ButOnTarg), blocking=True)
-# robot.MoveL(rdk.Mat(T_ButOnApproach), blocking=True)
-# robot.MoveJ(rdk.Mat(T_ButOffApproach), blocking=True)
-# robot.MoveL(rdk.Mat(T_ButOffTarg), blocking=True)
-# robot.MoveL(rdk.Mat(T_ButOffApproach), blocking=True)
-# robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
-# robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
-# robot.MoveJ(target, blocking=True)
+#RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+#robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
+#robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
+#robot.MoveJ(rdk.Mat(T_ButOnApproach), blocking=True)
+#robot.MoveL(rdk.Mat(T_ButOnTarg), blocking=True)
+#robot.MoveL(rdk.Mat(T_ButOnApproach), blocking=True)
+#robot.MoveJ(rdk.Mat(T_ButOffApproach), blocking=True)
+#robot.MoveL(rdk.Mat(T_ButOffTarg), blocking=True)
+#robot.MoveL(rdk.Mat(T_ButOffApproach), blocking=True)
+#robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
+#robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
+#robot.MoveJ(target, blocking=True)
 
 # # Pull slider 
-# robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
-# robot.MoveJ(rdk.Mat(J_toSlider2), blocking=True)
-# robot.MoveJ(rdk.Mat(J_toSlider3), blocking=True)
-# robot.MoveJ(rdk.Mat(T_SliderStart), blocking=True)
-# robot.MoveC(rdk.Mat(T_SliderHalf), rdk.Mat(T_SliderEnd), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
-# robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
-# robot.MoveJ(target, blocking=True)
+#robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
+#robot.MoveJ(rdk.Mat(J_toSlider2), blocking=True)
+#robot.MoveJ(rdk.Mat(J_toSlider3), blocking=True)
+#robot.MoveJ(rdk.Mat(T_SliderStart), blocking=True)
+#robot.MoveC(rdk.Mat(T_SliderHalf), rdk.Mat(T_SliderEnd), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
+#robot.MoveC(rdk.Mat(T_SliderHalf), rdk.Mat(T_SliderStart), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
+#robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
+#robot.MoveJ(target, blocking=True)
 
 
 # # # Push button on coffee machine
 # # robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
 # # RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-# robot.MoveJ(J_CtoBut2, blocking=True)
-# robot.MoveJ(rdk.Mat(T_But1Approach), blocking=True)
-# robot.MoveL(rdk.Mat(T_But1Target), blocking=True)
-# robot.MoveL(rdk.Mat(T_But1Approach), blocking=True)
-# robot.MoveJ(J_CtoBut1, blocking=True)
-# # robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
+#robot.MoveJ(J_CtoBut2, blocking=True)
+#robot.MoveJ(rdk.Mat(T_But1Approach), blocking=True)
+#robot.MoveL(rdk.Mat(T_But1Target), blocking=True)
+#robot.MoveL(rdk.Mat(T_But1Approach), blocking=True)
+#robot.MoveJ(J_CtoBut1, blocking=True)
+#robot.MoveJ(rdk.Mat(T_gToolTarg), blocking=True)
 # # RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
 # robot.MoveJ(target, blocking=True)
 
