@@ -124,6 +124,10 @@ TInv_grinderPush = np.linalg.inv(getTransform(R_Tool, P_grinderPush))
 TInv_grinderPushPlus = np.linalg.inv(getTransform(R_Tool, P_grinderPushPlus))
 P_grinderPull = np.transpose(np.array([[-50.0, 0, 67.06]]))
 TInv_grinderPull = np.linalg.inv(getTransform(R_Tool, P_grinderPull))
+
+R_ToolFlip = rotationZ(ToolTheta+180)
+TInv_grinderPushFlip = np.linalg.inv(getTransform(R_ToolFlip, P_grinderPush))
+
 # Coffee Cup holder
 P_cupHoldCentre = np.transpose(np.array([[-47, 0, 186]]))
 CCToolTheta = ToolTheta
@@ -132,9 +136,11 @@ T_Centre = getTransform(Identity, P_cupHoldCentre)
 T_RX = getTransform(rotationZ(90), P_Nothing)
 TInv_cupHoldCentre = np.linalg.inv(np.matmul(np.matmul(T_RTool, T_Centre), T_RX))
 
-cupOffset = np.transpose(np.array([[80.0, 0.0, 0]]))
-TInv_cupFlip = np.matmul(getTransform(rotationZ(90), cupOffset), TInv_cupHoldCentre)
+P_cupOffset = P_cupHoldCentre + np.transpose(np.array([[-80.0, 0.0, 0]]))      #------Cup Offset-------------
+T_CentreOffset = getTransform(Identity, P_cupOffset)
+TInv_cupHoldCentreOffset = np.linalg.inv(np.matmul(np.matmul(T_RTool, T_CentreOffset), T_RX))
 
+TInv_cupFlip = np.matmul(getTransform(rotationZ(90), P_cupOffset), TInv_cupHoldCentre)
 # R_ToolFlip = rotationZ(CCToolTheta-90)
 # P_Cup = P_cupHoldCentre + np.transpose(np.array([[0, 0, 0]]))
 # T_RToolFlipCUP = getTransform(R_ToolFlip, P_Nothing)
@@ -160,7 +166,7 @@ P_csCntre = np.transpose(np.array([[0.0,0.0,180.0]]))    #----------------------
 T_CupCentre = np.matmul(T_CC, getTransform(oRcc, P_csCntre)).tolist()
 T_CUPC = np.matmul(T_CupCentre, TInv_cupHoldCentre).tolist()
 
-P_csCntreApp = P_csCntre + np.transpose(np.array([[0, 50, 0]]))
+P_csCntreApp = P_csCntre + np.transpose(np.array([[0, 70, 0]]))
 T_CupCentreApp = np.matmul(T_CC, getTransform(oRcc, P_csCntreApp)).tolist()
 T_CUPCAPP = np.matmul(T_CupCentreApp, TInv_cupHoldCentre).tolist()
 
@@ -190,7 +196,7 @@ sPq = np.transpose(np.array([[-80.0, 0.0, 0.0]]))
 oRs = getScraperRotation(oPs, oPqy, oPq2)
 T_S = getTransform(oRs, oPs)
 # Tamper
-sPTamp = np.transpose(np.array([[-80, 0, -55]]))                        #---------Tamper----
+sPTamp = np.transpose(np.array([[-75, -2, -61]]))                        #---------Tamper----
 sPTampApproach = sPTamp + np.transpose(np.array([[0, 0, -50]]))         #-------------------
 sRy = rotationY(-90)
 sTRx = getTransform(rotationX(-90), P_Nothing)
@@ -199,8 +205,8 @@ T_TAMP = np.matmul(T_Tamp, TInv_PF1Tool).tolist()
 T_TampApp = np.matmul(T_S, np.matmul(getTransform(sRy, sPTampApproach), sTRx).tolist()).tolist()
 T_TAMPAPP = np.matmul(T_TampApp, TInv_PF1Tool).tolist()
 # Scraper
-halfScrape = 30                                                     #----length------Scraper---
-dropHeight = 20                                                     #----height------Scraper---
+halfScrape = 40                                                     #----length------Scraper---
+dropHeight = 15                                                     #----height------Scraper---
 sPScrapeEnd = np.transpose(np.array([[70, halfScrape, -32-dropHeight]]))
 sPScrapeStart = np.transpose(np.array([[70, -2*halfScrape, -32-dropHeight]]))
 sRy = rotationY(-90)
@@ -223,8 +229,8 @@ oRg, thetaG = getRotation(oPg, oPqg, gPq)
 # oRg = rotationZ(135)
 T_G = getTransform(oRg, oPg)
 # PF2
-P_PF2 = np.transpose(np.array([[163, -22.0, -242]]))             #-----PF2--------------
-P_PF2App = np.transpose(np.array([[200, -20.0, -240]]))          #----------------------
+P_PF2 = np.transpose(np.array([[160, -18.0, -237]]))             #-----PF2--------------
+P_PF2App = np.transpose(np.array([[200, -18.0, -237]]))          #----------------------
 PF2Theta = -90 - portTheta-2                                     #----------------------
 PF2ThetaApp = -90 - portTheta # Reducing angles tilts head low   #----------------------
 R_PF2 = rotationY(PF2Theta)
@@ -276,7 +282,7 @@ TTT = np.matmul(T_TF, TInv_PF1Tool).tolist()
 GHdrop = 40                                               #-------------------------
 oRGHY = rotationY(-90)
 T_RYGHead = getTransform(oRGHY, P_Nothing)
-P_GHead = np.transpose(np.array([[9.5,67.3,214]]))        #-------------------------
+P_GHead = np.transpose(np.array([[11,71,190]]))        #-------------------------
 PGHdrop = np.transpose(np.array([[0, 0, -GHdrop]]))
 P_GHeadApp = P_GHead + PGHdrop
 T_GHead = np.matmul(getTransform(Identity, P_GHead), T_RYGHead)
@@ -284,7 +290,7 @@ T_GHeadApp = np.matmul(getTransform(Identity, P_GHeadApp), T_RYGHead)
 T_GHEAD = np.matmul(np.matmul(T_TF, T_GHead), TInv_PF1Tool).tolist()
 T_GHEADAPP = np.matmul(np.matmul(T_TF, T_GHeadApp), TInv_PF1Tool).tolist()
 alpha = 45                                               #-------------------------
-N = 10                                                   #-------------------------
+N = 15                                                   #-------------------------
 T_GHEADRlist = []
 for n in range(1, (N)):
     angle = alpha-n*(alpha/N)
@@ -302,33 +308,34 @@ T_CMF = getTransform(oRc, oPc)
 T_CMF2 = np.matmul(T_CMF, TInv_grinderPush).tolist()
 # print(T_CMF)
 # Button 1: urTtcp = urTcm cmTbut1 inv(gtTpb) inv(tcpTgt)
-P_cBut1 = np.transpose(np.array([[45.67,35.25,-45.89]]))
+P_cBut1 = np.transpose(np.array([[50,35.25,-55]]))
 R_cBut1 = rotationX(-90)
 T_cBut1 = getTransform(R_cBut1, P_cBut1)
 T_But1 = np.matmul(T_CMF, T_cBut1).tolist()
-T_BUT1BOTTOM = np.matmul(T_But1, TInv_grinderPush).tolist()
+T_BUT1BOTTOM = np.matmul(T_But1, TInv_grinderPushFlip).tolist()
 
-P_cBut1Top = P_cBut1 + np.transpose(np.array([[10, 0, 30]]))
+P_cBut1Top = P_cBut1 + np.transpose(np.array([[0, 0, 40]]))
 T_cBut1Top = getTransform(R_cBut1, P_cBut1Top)
 T_But1Top = np.matmul(T_CMF, T_cBut1Top).tolist()
-T_BUT1TOP = np.matmul(T_But1Top, TInv_grinderPush).tolist()
+T_BUT1TOP = np.matmul(T_But1Top, TInv_grinderPushFlip).tolist()
 
 # Cup Placement
-P_CupPlace = np.transpose(np.array([[-12.68, 72, -290]]))               #-------Cup Place--------
-T_CupPos = getTransform(rotationY(-90), P_CupPlace)
-T_CupPlace = np.matmul(T_CMF, T_CupPos)
-T_CupAngle = getTransform(rotationX(-50), P_Nothing)
-T_CupPlaceAngle = np.matmul(T_CupPlace, T_CupAngle)
-T_CUPPLACE = np.matmul(T_CupPlaceAngle, TInv_cupFlip).tolist()
+P_CupPlace = np.transpose(np.array([[0, 72, -290]]))               #-------Cup Place--------
+T_CupPos = getTransform(rotationX(-90), P_CupPlace)
+T_CupPlace = np.matmul(T_CMF, T_CupPos).tolist()
+# T_CupAngle = getTransform(rotationX(0), P_Nothing)
+# T_CupPlaceAngle = np.matmul(T_CupPlace, T_CupAngle)
+T_CUPPLACE = np.matmul(T_CupPlace, TInv_cupHoldCentreOffset).tolist()
 
-P_CupPlaceApp2 = P_CupPlace + np.transpose(np.array([[100, -100, 10]]))   #-------Cup Approaches--------
-P_CupPlaceApp1 = P_CupPlace + np.transpose(np.array([[0, 0, 10]]))      #-------Cup Approaches--------
-T_CupPosApp2 = getTransform(rotationY(-90), P_CupPlaceApp2)
-T_CupPosApp1 = getTransform(rotationY(-90), P_CupPlaceApp1)
-T_CupPlaceApproach2 = np.matmul(np.matmul(T_CMF, T_CupPosApp2), T_CupAngle)
-T_CupPlaceApproach1 = np.matmul(np.matmul(T_CMF, T_CupPosApp1), T_CupAngle)
-T_CUPPAPP2 = np.matmul(T_CupPlaceApproach2, TInv_cupFlip).tolist()
-T_CUPPAPP1 = np.matmul(T_CupPlaceApproach1, TInv_cupFlip).tolist()
+P_CupPlaceApp2 = P_CupPlace + np.transpose(np.array([[0, -150, 0]]))   #-------Cup Approaches--------
+T_CupPosApp2 = getTransform(rotationX(-90), P_CupPlaceApp2)
+T_CupPlaceApproach2 = np.matmul(T_CMF, T_CupPosApp2)
+T_CUPPAPP2 = np.matmul(T_CupPlaceApproach2, TInv_cupHoldCentreOffset).tolist()
+
+# P_CupPlaceApp1 = P_CupPlace + np.transpose(np.array([[0, 0, 10]]))      #-------Cup Approaches--------
+# T_CupPosApp1 = getTransform(rotationY(-90), P_CupPlaceApp1)
+# T_CupPlaceApproach1 = np.matmul(np.matmul(T_CMF, T_CupPosApp1), T_CupAngle)
+# T_CUPPAPP1 = np.matmul(T_CupPlaceApproach1, TInv_cupFlip).tolist()
 
 
 #************************************************************************************
@@ -338,13 +345,14 @@ T_CUPPAPP1 = np.matmul(T_CupPlaceApproach1, TInv_cupFlip).tolist()
 J_SliderToHome = [-249.120000, -89.240000, 69.370000, -47.120000, 78.200000, -128.000000]
 J_toSlider2 = [-257.160000, -78.850000, 44.820000, -53.390000, 92.010000, -147.450000] 
 J_toSlider3 = [-253.670000, -74.430000, 104.810000, -34.940000, 92.660000, -141.270000]
-J_toPortaDrop1 = [-238.380000, -105.180000, 156.020000, -71.390000, 75.960000, -219.120000]
-J_toPortaDrop2 = [-238.380000, -95.180000, 146.020000, -52.390000, 75.960000, -219.120000]
+J_toPortaDrop1 = [-17.800000, -91.210000, -145.440000, -117.600000, -63.600000, -222.730000]
+J_toPortaDrop2 = [-75.530000, -79.930000, -101.290000, -114.160000, -3.150000, -198.260000]
 J_Gbut1= [-74.790000, -116.970000, -53.070000, -103.090000, 174.720000, -205.420000]
 J_Gbut2 = [-63.030000, -135.630000, -77.200000, -102.170000, 182.700000, -209.000000]
 
 # Scraper
-J_ScrapeToTamp = [148.680000, -96.960000, -218.390000, -40.500000, 35.900000, 132.050000]
+J_GtoScraper = [-17.800000, -89.800000, -146.440000, -115.600000, -63.600000, -222.730000]
+J_ScrapeToTamp = [15.390000, -81.780000, -137.880000, -142.220000, -101.540000, -232.610000]
 
 # Coffee Machine
 J_CtoBut1 = [4.300000, -97.240000, 115.630000, -209.500000, 54.830000, -107.990000]
@@ -352,33 +360,40 @@ J_CtoBut2 = [4.310000, -94.240000, 118.630000, -162.500000, 54.830000, -107.9900
 
 # Tool Frame
 J_ToolFrame = [-149.664712, -68.684232, -83.849623, -116.347560, 91.413927, -0.018507]
-
+J_ToolFrameGrinder = [-140.660000, -89.680000, -75.840000, -100.340000, 90.410000, -0.010000]
 # Cup Tool
 J_CupApproach = [-298.400000, -91.880000, -204.550000, -68.350000, 62.280000, -31.900000]
-J_CupExit = [-306.080000, -98.480000, -255.930000, -7.080000, 65.050000, -219.410000]
+J_CupApproach1 = [-62.280000, -61.920000, -144.350000, -153.720000, -65.310000, -41.010000]
+
+J_CupExit = [-64.430000, -96.700000, -127.140000, -283.140000, -11.060000, -65.000000]
+J_CupExit1 = [-83.540000, -62.100000, -132.440000, -171.690000, -65.260000, -41.060000]
+
+# Group Head
+J_toGroup = [-99.460000, -65.980000, -152.530000, -140.340000, -61.170000, -221.800000]
+J_GroupExit = [-167.870000, -65.980000, -152.530000, -140.340000, -61.170000, -221.800000]
 
 
 
 ### MOVEMENTS
-
+RDK.setSimulationSpeed(0.2)
 # # # Place portafilter tool under grinder
 # # RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
-# # robot.MoveJ(J_ToolFrame, blocking=True)
+
+# robot.MoveJ(J_ToolFrame, blocking=True)
 # RDK.RunProgram("Portafilter Tool Attach (Tool Stand)", True)
+# robot.MoveJ(J_toPortaDrop2, blocking=True)
 # robot.MoveJ(J_toPortaDrop1, blocking=True)
-# RDK.setSimulationSpeed(0.1)
 # robot.MoveJ(rdk.Mat(T_GPORTPLACEAPP), blocking=True)
 # robot.MoveJ(rdk.Mat(T_GPORTPLACE), blocking=True)
 # RDK.RunProgram("Portafilter Tool Detach (Grinder)", True)
-# robot.MoveJ(rdk.Mat(T_GPORTPLACE), blocking=True)
 # robot.MoveJ(rdk.Mat(T_GPORTPLACEAPP), blocking=True)
 # robot.MoveJ(J_toPortaDrop1, blocking=True)
-# robot.MoveJ(target, blocking=True)
 
-# # # Push Grinder Button
+# # # Push Grinder Button #DONE
 #robot.MoveJ(rdk.Mat(J_ToolFrame), blocking=True)
 # # # RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
-#RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+# robot.MoveJ(J_ToolFrame, blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
 # robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
 # robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
 # robot.MoveJ(rdk.Mat(T_BUTONAPP), blocking=True)
@@ -390,46 +405,43 @@ J_CupExit = [-306.080000, -98.480000, -255.930000, -7.080000, 65.050000, -219.41
 # robot.MoveL(rdk.Mat(T_BUTOFFAPP), blocking=True)
 # robot.MoveJ(rdk.Mat(J_Gbut2), blocking=True)
 # robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
-# robot.MoveJ(target, blocking=True)
 
 # # Pull slider #DONE
-# robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
-# robot.MoveJ(rdk.Mat(J_toSlider2), blocking=True)
-# robot.MoveJ(rdk.Mat(J_toSlider3), blocking=True)
 # robot.MoveJ(rdk.Mat(T_SLIDERSTART), blocking=True)
-# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDEREND), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
-# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDERSTART), blocking=True) #MoveC(target1, target2, itemrobot, blocking=True)
-# robot.MoveJ(rdk.Mat(J_SliderToHome), blocking=True)
-# robot.MoveJ(target, blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDEREND), blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDERSTART), blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDEREND), blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDERSTART), blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDEREND), blocking=True)
+# robot.MoveC(rdk.Mat(T_SLIDERHALF), rdk.Mat(T_SLIDERSTART), blocking=True)
+# robot.MoveJ(rdk.Mat(J_Gbut1), blocking=True)
+# robot.MoveJ(J_ToolFrame, blocking=True)
+# RDK.RunProgram("Grinder Tool Detach (Tool Stand)", True)
 
 # # Pick up portafilter from PF2
-# robot.MoveJ(J_toPortaDrop1, blocking=True)
-# RDK.setSimulationSpeed(0.1)
+# robot.MoveJ(J_toPortaDrop2, blocking=True)
 # robot.MoveJ(rdk.Mat(T_GPORTPLACEAPP), blocking=True)
-# robot.MoveJ(rdk.Mat(T_GPORTPLACE), blocking=True)
 # RDK.RunProgram("Portafilter Tool Attach (Grinder)", True)
-# robot.MoveJ(rdk.Mat(T_GPORTPLACE), blocking=True)
 # robot.MoveJ(rdk.Mat(T_GPORTPLACEAPP), blocking=True)
-# robot.MoveJ(J_toPortaDrop1, blocking=True)
+# robot.MoveJ(J_GtoScraper, blocking=True)
 
 # # Scraper and Tamp
 # # Scrape
-# robot.MoveJ(target, blocking=True)
+# robot.MoveJ(target, blocking=True)        ---------------
 # robot.MoveJ(rdk.Mat(T_SCRAPESTART), blocking=True)
-# RDK.setSimulationSpeed(0.1)
 # robot.MoveL(rdk.Mat(T_SCRAPEEND), blocking=True)
 # robot.MoveJ(rdk.Mat(T_SCRAPESTART), blocking=True)
 # robot.MoveJ(rdk.Mat(J_ScrapeToTamp), blocking=True)
 # # Tamp
 # robot.MoveJ(rdk.Mat(T_TAMPAPP), blocking=True)
-# RDK.setSimulationSpeed(1)
 # robot.MoveL(rdk.Mat(T_TAMP), blocking=True)
 # robot.MoveL(rdk.Mat(T_TAMPAPP), blocking=True)
-# RDK.setSimulationSpeed(1)
-# robot.MoveJ(target, blocking=True)
+# robot.MoveJ(rdk.Mat(J_ScrapeToTamp), blocking=True)
+#RDK.setSimulationSpeed(1)                   #---------------
+#robot.MoveJ(target, blocking=True)
 
 # Group Head
-# RDK.setSimulationSpeed(0.2)
+# robot.MoveJ(rdk.Mat(J_toGroup), blocking=True)
 # robot.MoveJ(rdk.Mat(T_GHEADAPP), blocking=True)
 # robot.MoveL(rdk.Mat(T_GHEAD), blocking=True)
 # for T_GHEADR in reversed(T_GHEADRlist):
@@ -439,41 +451,37 @@ J_CupExit = [-306.080000, -98.480000, -255.930000, -7.080000, 65.050000, -219.41
 # robot.MoveL(rdk.Mat(T_GHEAD), blocking=True)
 # robot.MoveL(rdk.Mat(T_GHEAD), blocking=True)
 # robot.MoveL(rdk.Mat(T_GHEADAPP), blocking=True)
-
+# robot.MoveJ(rdk.Mat(J_GroupExit), blocking=True)
 
 # # Get Cup
 # robot.MoveJ(rdk.Mat(J_ToolFrame), blocking=True)
-# RDK.RunProgram("Portafilter Tool Detach (Tool Stand)", True)
 # RDK.RunProgram("Cup Tool Attach (Stand)", True)
-# RDK.setSimulationSpeed(0.3)
-# robot.MoveJ(J_CupApproach, blocking=True)
+# robot.MoveJ(J_CupApproach1, blocking=True)
 # robot.MoveJ(rdk.Mat(T_CUPCAPP), blocking=True)
 # RDK.RunProgram("Cup Tool Open", True)
 # robot.MoveJ(rdk.Mat(T_CUPC), blocking=True)
 # RDK.RunProgram("Cup Tool Close", True)
 # robot.MoveL(rdk.Mat(T_CUPCUP), blocking=True)
-# robot.MoveJ(J_CupExit, blocking=True)
+# robot.MoveJ(J_CupExit1, blocking=True)
 
 # # Place Cup at machine
+# robot.MoveJ(J_CupExit, blocking=True)
 # robot.MoveJ(rdk.Mat(T_CUPPAPP2), blocking=True)
-# robot.MoveL(rdk.Mat(T_CUPPAPP1), blocking=True)
-# robot.MoveL(rdk.Mat(T_CUPPLACE), blocking=True)
+# robot.MoveJ(rdk.Mat(T_CUPPLACE), blocking=True)
 # RDK.RunProgram("Cup Tool Open", True)
-# robot.MoveL(rdk.Mat(T_CUPPAPP1), blocking=True)
-# robot.MoveL(rdk.Mat(T_CUPPAPP2), blocking=True)
+# robot.MoveJ(rdk.Mat(T_CUPPAPP2), blocking=True)
 # RDK.RunProgram("Cup Tool Close", True)
 
 
 # # # Push button on coffee machine
 # robot.MoveJ(rdk.Mat(J_ToolFrame), blocking=True)
 # RDK.RunProgram("Cup Tool Detach (Stand)", True)
-RDK.setSimulationSpeed(0.3)
-robot.MoveJ(J_ToolFrame, blocking=True)
-RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
-robot.MoveJ(rdk.Mat(T_CMF), blocking=True)
-robot.MoveL(rdk.Mat(T_BUT1BOTTOM), blocking=True)
-# Pause
-robot.MoveL(rdk.Mat(T_BUT1TOP), blocking=True)
+# RDK.RunProgram("Grinder Tool Attach (Tool Stand)", True)
+# robot.MoveL(rdk.Mat(T_BUT1TOP), blocking=True)
+# # Pause
+# robot.MoveJ(rdk.Mat(T_BUT1BOTTOM), blocking=True)
+
+# Get Cup of Coffee on Stand
 
 
 
